@@ -3,12 +3,14 @@ Streamlit UI for surgical tool usage prediction with local Llama explanations.
 Run the FastAPI service separately (uvicorn api:app --reload --port 8000) and this app will call it.
 """
 
+import os
 import requests
 import streamlit as st
 
 from llama_client import call_local_llama
 
-PREDICT_URL = "http://localhost:8000/predict"
+# Allow overriding the API endpoint for containerized deployments.
+PREDICT_URL = os.getenv("PREDICT_URL", "http://localhost:8000/predict")
 
 
 def call_predict_api(payload: dict):
@@ -97,7 +99,8 @@ based on the duration, complexity, and experience.
 Do not mention that this is synthetic or a demo. Use simple language suitable for doctors and OR staff.
 """
 
-        explanation = call_local_llama(explain_prompt)
+        with st.spinner("Generating explanation with local Llama..."):
+            explanation = call_local_llama(explain_prompt)
         st.info(explanation)
 
         st.caption(

@@ -1,0 +1,40 @@
+services:
+  api:
+    build: .
+    command: uvicorn api:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: unless-stopped
+
+  streamlit:
+    build: .
+    command: streamlit run app.py --server.headless true --server.port 8501 --server.address 0.0.0.0
+    environment:
+      PREDICT_URL: http://api:8000/predict
+      OLLAMA_URL: http://ollama:11434/api/generate
+    depends_on:
+      - api
+      - ollama
+    ports:
+      - "8501:8501"
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  ollama:
